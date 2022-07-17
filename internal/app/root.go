@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+
+	"github.com/stephenwilliams/semver-cli/internal/pkg/version"
 )
 
 func newRootCommand() *cobra.Command {
@@ -14,6 +16,7 @@ func newRootCommand() *cobra.Command {
 		SilenceUsage:      true,
 		SilenceErrors:     true,
 		DisableAutoGenTag: true,
+		Version:           version.Version.String(),
 	}
 
 	cmd.AddCommand(

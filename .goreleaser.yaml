@@ -1,0 +1,35 @@
+before:
+  hooks:
+    - just format
+builds:
+  - main: ./cmd/semver-cli
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - "-s -w -X github.com/stephenwilliams/semver-cli/internal/pkg/version.version={{.Version}} -X github.com/stephenwilliams/semver-cli/internal/pkg/version.commit={{.Commit}} -X github.com/stephenwilliams/semver-cli/internal/pkg/version.date={{.Date}}"
+    goos:
+      - linux
+      - windows
+      - darwin
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+release:
+  github:
+    owner: stephenwilliams
+    name: semver-cli
+brews:
+  - name: semver-cli
+    tap:
+      owner: stephenwilliams
+      name: homebrew-tap
+    folder: Formula
+

@@ -1,6 +1,6 @@
 project := "github.com/stephenwilliams/semver-cli"
 
-default: format
+default: format test snapshot
 
 format: format-imports
     go fmt ./...
@@ -25,3 +25,13 @@ tools:
     GOBIN="{{justfile_directory()}}/bin"
     go install github.com/incu6us/goimports-reviser/v2@v2.5.1
     rm -rf $$TMP_DIR
+
+snapshot:
+    goreleaser release --snapshot --skip-publish --rm-dist
+
+release:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    git tag "$(svu next)"
+    git push --tags
+    goreleaser --rm-dist

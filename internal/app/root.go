@@ -27,6 +27,7 @@ func newRootCommand() *cobra.Command {
 		newLessThanCommand(),
 		newLessThanOrEqualCommand(),
 		newSelectVersionCommand(),
+		newVersionCommand(),
 	)
 
 	return cmd

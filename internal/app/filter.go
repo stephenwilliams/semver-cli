@@ -93,9 +93,7 @@ If none match, exits 1.`,
 				os.Exit(1)
 			}
 
-			for _, v := range filtered {
-				fmt.Println(v)
-			}
+			fmt.Println(strings.Join(filtered, separator))
 		},
 	}
 

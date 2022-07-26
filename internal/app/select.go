@@ -13,13 +13,13 @@ import (
 	"github.com/stephenwilliams/semver-cli/internal/pkg/terminal"
 )
 
-func selectVersion(c string, versions []string, strict, ignoreErrors, latest bool, p *regexp.Regexp) (string, error) {
+func selectVersion(c string, versions []string, strict, ignoreErrors, quiet, latest bool, p *regexp.Regexp) (string, error) {
 	con, err := version.NewConstraint(c)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse constraint: %w", err)
 	}
 
-	vers, err := newVersions(versions, strict, ignoreErrors, p)
+	vers, err := newVersions(versions, strict, ignoreErrors, quiet, p)
 	if err != nil {
 		return "", err
 	}
@@ -40,7 +40,7 @@ func selectVersion(c string, versions []string, strict, ignoreErrors, latest boo
 }
 
 func newSelectVersionCommand() *cobra.Command {
-	var strict, ignoreErrors, latest bool
+	var strict, ignoreErrors, quiet, latest bool
 	var constraint, versionsInput, separator, pattern string
 
 	cmd := &cobra.Command{
@@ -88,7 +88,7 @@ If none is selected, exits 1.`,
 
 			versions := filterEmptyStrings(strings.Split(string(data), separator))
 
-			selected, err := selectVersion(constraint, versions, strict, ignoreErrors, latest, p)
+			selected, err := selectVersion(constraint, versions, strict, ignoreErrors, quiet, latest, p)
 			if err != nil {
 				_, _ = fmt.Fprintln(os.Stderr, err)
 				os.Exit(2)
@@ -105,6 +105,7 @@ If none is selected, exits 1.`,
 
 	cmd.Flags().BoolVar(&strict, "strict", false, "enforce versions that adhere strictly to SemVer specs")
 	cmd.Flags().BoolVar(&ignoreErrors, "ignore-errors", false, "ignore errors when parsing versions. Skips invalid version.")
+	cmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "when ignoring errors parsing versions, don't output an error to stderr.")
 	cmd.Flags().BoolVar(&latest, "latest", true, "selects the latest (highest) version that matches the constraint")
 	cmd.Flags().StringVar(&constraint, "constraint", "", "the SemVer constraint to use")
 	cmd.Flags().StringVar(&versionsInput, "versions", "-", "The versions to select from. - means piped stdin, otherwise assumes its a file path.")

@@ -26,7 +26,7 @@ func newVersion(s string, strict bool, p *regexp.Regexp) (*version.Version, erro
 	return version.NewVersion(s)
 }
 
-func newVersions(versions []string, strict, ignoreErrors bool, p *regexp.Regexp) (OriginalValueVersionCollection, error) {
+func newVersions(versions []string, strict, ignoreErrors, quiet bool, p *regexp.Regexp) (OriginalValueVersionCollection, error) {
 	var results OriginalValueVersionCollection
 
 	for i, v := range versions {
@@ -34,8 +34,12 @@ func newVersions(versions []string, strict, ignoreErrors bool, p *regexp.Regexp)
 		if err != nil {
 			wErr := fmt.Errorf("version at index %d, '%s', failed to parse: %w", i, v, err)
 
+			if ignoreErrors && quiet {
+				continue
+			}
+
 			if ignoreErrors {
-				fmt.Fprintln(os.Stderr, wErr)
+				_, _ = fmt.Fprintln(os.Stderr, wErr)
 				continue
 			}
 

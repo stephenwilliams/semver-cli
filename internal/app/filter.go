@@ -12,13 +12,13 @@ import (
 	"github.com/stephenwilliams/semver-cli/internal/pkg/terminal"
 )
 
-func filterVersion(c string, versions []string, strict, ignoreErrors bool, p *regexp.Regexp) ([]string, error) {
+func filterVersion(c string, versions []string, strict, ignoreErrors, quiet bool, p *regexp.Regexp) ([]string, error) {
 	con, err := version.NewConstraint(c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse constraint: %w", err)
 	}
 
-	vers, err := newVersions(versions, strict, ignoreErrors, p)
+	vers, err := newVersions(versions, strict, ignoreErrors, quiet, p)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func filterVersion(c string, versions []string, strict, ignoreErrors bool, p *re
 }
 
 func newFilterVersionCommand() *cobra.Command {
-	var strict, ignoreErrors bool
+	var strict, ignoreErrors, quiet bool
 	var constraint, versionsInput, separator, pattern string
 
 	cmd := &cobra.Command{
@@ -82,7 +82,7 @@ If none match, exits 1.`,
 
 			versions := filterEmptyStrings(strings.Split(string(data), separator))
 
-			filtered, err := filterVersion(constraint, versions, strict, ignoreErrors, p)
+			filtered, err := filterVersion(constraint, versions, strict, ignoreErrors, quiet, p)
 			if err != nil {
 				_, _ = fmt.Fprintln(os.Stderr, err)
 				os.Exit(2)
@@ -99,6 +99,7 @@ If none match, exits 1.`,
 
 	cmd.Flags().BoolVar(&strict, "strict", false, "enforce versions that adhere strictly to SemVer specs")
 	cmd.Flags().BoolVar(&ignoreErrors, "ignore-errors", false, "ignore errors when parsing versions. Skips invalid version.")
+	cmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "when ignoring errors parsing versions, don't output an error to stderr.")
 	cmd.Flags().StringVar(&constraint, "constraint", "", "the SemVer constraint to use")
 	cmd.Flags().StringVar(&versionsInput, "versions", "-", "The versions to filter. - means piped stdin, otherwise assumes its a file path.")
 	cmd.Flags().StringVar(&separator, "separator", "NEWLINE", "The separator between versions passed in the input. Defaults to a new line character.")

@@ -70,7 +70,7 @@ If none is selected, exits 1.`,
 				}
 			}
 
-			versions := filterVersions(strings.Split(string(data), separator))
+			versions := filterEmptyStrings(strings.Split(string(data), separator))
 
 			selected, err := selectVersion(constraint, versions, strict, latest)
 			if err != nil {
@@ -96,10 +96,10 @@ If none is selected, exits 1.`,
 	return cmd
 }
 
-func filterVersions(versions []string) []string {
+func filterEmptyStrings(s []string) []string {
 	var results []string
 
-	for _, v := range versions {
+	for _, v := range s {
 		v = strings.TrimSpace(v)
 
 		if v != "" {

@@ -3,13 +3,14 @@ package app
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/hashicorp/go-version"
 	"github.com/spf13/cobra"
 )
 
-func check(c, v string, strict bool) (bool, error) {
-	ver, err := newVersion(v, strict)
+func check(c, v string, strict bool, p *regexp.Regexp) (bool, error) {
+	ver, err := newVersion(v, strict, p)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse version: %w", err)
 	}
@@ -24,6 +25,7 @@ func check(c, v string, strict bool) (bool, error) {
 
 func newCheckCommand() *cobra.Command {
 	var strict bool
+	var pattern string
 
 	cmd := &cobra.Command{
 		Use:     "check <CONSTRAINT> <VERSION>",
@@ -31,7 +33,22 @@ func newCheckCommand() *cobra.Command {
 		Short:   "Checks a version matches constraint; exits 0 it does, 1 if not.",
 		Args:    cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			result, err := check(args[0], args[1], strict)
+			var p *regexp.Regexp
+			if pattern != "" {
+				var err error
+				p, err = regexp.Compile(pattern)
+				if err != nil {
+					_, _ = fmt.Fprintf(os.Stderr, "failed to parse pattern: %s", err)
+					os.Exit(2)
+				}
+
+				if p.SubexpIndex("version") == -1 {
+					_, _ = fmt.Fprintln(os.Stderr, "invalid pattern. must have a version group", err)
+					os.Exit(2)
+				}
+			}
+
+			result, err := check(args[0], args[1], strict, p)
 			if err != nil {
 				_, _ = fmt.Fprintln(os.Stderr, err)
 				os.Exit(2)
@@ -44,6 +61,7 @@ func newCheckCommand() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&strict, "strict", false, "enforce version that adheres strictly to SemVer specs")
+	cmd.Flags().StringVarP(&pattern, "pattern", "p", "", "pattern for retrieving a version. Must include a version group.")
 
 	return cmd
 }

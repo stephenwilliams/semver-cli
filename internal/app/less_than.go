@@ -3,17 +3,18 @@ package app
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/spf13/cobra"
 )
 
-func lessThan(a, b string, strict bool) (bool, error) {
-	vA, err := newVersion(a, strict)
+func lessThan(a, b string, strict bool, p *regexp.Regexp) (bool, error) {
+	vA, err := newVersion(a, strict, p)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse version A: %w", err)
 	}
 
-	vB, err := newVersion(b, strict)
+	vB, err := newVersion(b, strict, p)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse version B: %w", err)
 	}
@@ -23,6 +24,7 @@ func lessThan(a, b string, strict bool) (bool, error) {
 
 func newLessThanCommand() *cobra.Command {
 	var strict bool
+	var pattern string
 
 	cmd := &cobra.Command{
 		Use:     "less-than <A> <B>",
@@ -30,7 +32,22 @@ func newLessThanCommand() *cobra.Command {
 		Short:   "Checks two versions to see if version A < version B; exits 0 if it is, 1 if not.",
 		Args:    cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			result, err := lessThan(args[0], args[1], strict)
+			var p *regexp.Regexp
+			if pattern != "" {
+				var err error
+				p, err = regexp.Compile(pattern)
+				if err != nil {
+					_, _ = fmt.Fprintf(os.Stderr, "failed to parse pattern: %s", err)
+					os.Exit(2)
+				}
+
+				if p.SubexpIndex("version") == -1 {
+					_, _ = fmt.Fprintln(os.Stderr, "invalid pattern. must have a version group", err)
+					os.Exit(2)
+				}
+			}
+
+			result, err := lessThan(args[0], args[1], strict, p)
 			if err != nil {
 				_, _ = fmt.Fprintln(os.Stderr, err)
 				os.Exit(2)
@@ -43,6 +60,7 @@ func newLessThanCommand() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&strict, "strict", false, "enforce versions that adhere strictly to SemVer specs")
+	cmd.Flags().StringVarP(&pattern, "pattern", "p", "", "pattern for retrieving a version. Must include a version group.")
 
 	return cmd
 }

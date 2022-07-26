@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/go-version"
@@ -11,21 +12,21 @@ import (
 	"github.com/stephenwilliams/semver-cli/internal/pkg/terminal"
 )
 
-func filterVersion(c string, versions []string, strict bool) ([]string, error) {
+func filterVersion(c string, versions []string, strict, ignoreErrors bool, p *regexp.Regexp) ([]string, error) {
 	con, err := version.NewConstraint(c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse constraint: %w", err)
 	}
 
-	vers, err := newVersions(versions, strict)
+	vers, err := newVersions(versions, strict, ignoreErrors, p)
 	if err != nil {
 		return nil, err
 	}
 
 	var results []string
 	for _, v := range vers {
-		if con.Check(v) {
-			results = append(results, v.String())
+		if con.Check(v.Version) {
+			results = append(results, v.Original)
 		}
 	}
 
@@ -33,8 +34,8 @@ func filterVersion(c string, versions []string, strict bool) ([]string, error) {
 }
 
 func newFilterVersionCommand() *cobra.Command {
-	var strict bool
-	var constraint, versionsInput, separator string
+	var strict, ignoreErrors bool
+	var constraint, versionsInput, separator, pattern string
 
 	cmd := &cobra.Command{
 		Use:     "filter-versions [FLAGS]",
@@ -43,6 +44,21 @@ func newFilterVersionCommand() *cobra.Command {
 		Long: `Filters versions matching the provided constraint. The versions are provided to stdout.
 If none match, exits 1.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			var p *regexp.Regexp
+			if pattern != "" {
+				var err error
+				p, err = regexp.Compile(pattern)
+				if err != nil {
+					_, _ = fmt.Fprintf(os.Stderr, "failed to parse pattern: %s", err)
+					os.Exit(2)
+				}
+
+				if p.SubexpIndex("version") == -1 {
+					_, _ = fmt.Fprintln(os.Stderr, "invalid pattern. must have a version group", err)
+					os.Exit(2)
+				}
+			}
+
 			if separator == "NEWLINE" {
 				separator = "\n"
 			}
@@ -66,7 +82,7 @@ If none match, exits 1.`,
 
 			versions := filterEmptyStrings(strings.Split(string(data), separator))
 
-			filtered, err := filterVersion(constraint, versions, strict)
+			filtered, err := filterVersion(constraint, versions, strict, ignoreErrors, p)
 			if err != nil {
 				_, _ = fmt.Fprintln(os.Stderr, err)
 				os.Exit(2)
@@ -84,9 +100,11 @@ If none match, exits 1.`,
 	}
 
 	cmd.Flags().BoolVar(&strict, "strict", false, "enforce versions that adhere strictly to SemVer specs")
+	cmd.Flags().BoolVar(&ignoreErrors, "ignore-errors", false, "ignore errors when parsing versions. Skips invalid version.")
 	cmd.Flags().StringVar(&constraint, "constraint", "", "the SemVer constraint to use")
 	cmd.Flags().StringVar(&versionsInput, "versions", "-", "The versions to filter. - means piped stdin, otherwise assumes its a file path.")
 	cmd.Flags().StringVar(&separator, "separator", "NEWLINE", "The separator between versions passed in the input. Defaults to a new line character.")
+	cmd.Flags().StringVarP(&pattern, "pattern", "p", "", "pattern for retrieving a version. Must include a version group.")
 
 	return cmd
 }

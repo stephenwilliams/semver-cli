@@ -22,6 +22,7 @@ func newRootCommand() *cobra.Command {
 	cmd.AddCommand(
 		newCheckCommand(),
 		newEqualCommand(),
+		newFilterVersionCommand(),
 		newGreaterThanCommand(),
 		newGreaterThanOrEqualCommand(),
 		newLessThanCommand(),

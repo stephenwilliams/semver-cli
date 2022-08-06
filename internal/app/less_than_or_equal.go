@@ -28,7 +28,7 @@ func newLessThanOrEqualCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "less-than-or-equal <A> <B>",
-		Aliases: []string{"gte"},
+		Aliases: []string{"lte"},
 		Short:   "Checks two versions to see if version A <= version B; exits 0 if it is, 1 if not.",
 		Args:    cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {

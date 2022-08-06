@@ -29,7 +29,7 @@ func newCheckCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "check <CONSTRAINT> <VERSION>",
-		Aliases: []string{"eq"},
+		Aliases: []string{"c"},
 		Short:   "Checks a version matches constraint; exits 0 it does, 1 if not.",
 		Args:    cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {

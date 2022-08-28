@@ -36,5 +36,5 @@ func init() {
 }
 
 func (i Info) String() string {
-	return fmt.Sprintf("codevopsutil %s, commit %s, built at %s", i.Version, i.Commit, i.Date)
+	return fmt.Sprintf("semver-cli %s, commit %s, built at %s", i.Version, i.Commit, i.Date)
 }
